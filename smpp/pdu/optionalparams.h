@@ -22,6 +22,7 @@ struct i_optional_param {
   virtual error deserialize_value(const std::vector<uint8_t> &data) = 0;
   virtual std::vector<uint8_t> serialize() const = 0;
   virtual uint16_t length() const = 0;
+  virtual std::string to_string() const = 0;
 };
 
 struct unknown_optional_param : i_optional_param {
@@ -41,6 +42,10 @@ struct unknown_optional_param : i_optional_param {
 
   uint16_t length() const override {
     return static_cast<uint16_t>(get_param_size(value));
+  }
+
+  std::string to_string() const override {
+    return std::to_string(value);
   }
 
   uint16_t tag_;
@@ -66,6 +71,10 @@ struct optional_param : i_optional_param {
 
   uint16_t length() const override {
     return static_cast<uint16_t>(get_param_size(value));
+  }
+
+  std::string to_string() const override {
+    return std::to_string(value);
   }
 
   inline static const uint16_t tag_ = to_integral(tag);

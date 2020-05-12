@@ -11,6 +11,7 @@
 #include <map>
 #include "optionalparams.h"
 #include <numeric>
+#include <sstream>
 #include "mandatoryparams.h"
 #include "pduvisitor.h"
 
@@ -20,18 +21,20 @@ class i_pdu {
  public:
   virtual ~i_pdu() = default;
 
-  virtual uint32_t command_length() const = 0;
-  virtual enum command_id command_id() const = 0;
-  virtual enum command_status command_status() const = 0;
+  virtual uint32_t cmd_len() const = 0;
+  virtual command_id cmd_id() const = 0;
+  virtual command_status cmd_status() const = 0;
   virtual uint32_t seq_number() const = 0;
 
-  virtual void set_command_status(enum command_status command_status) = 0;
+  virtual void set_cmd_status(command_status cmd_status) = 0;
   virtual void set_seq_number(uint32_t seq_number) = 0;
 
   virtual error deserialize(const std::vector<uint8_t> &data) = 0;
   virtual std::vector<uint8_t> serialize() const = 0;
 
   virtual void accept(i_pdu_visitor &visitor) = 0;
+
+  virtual std::string to_string() const = 0;
 };
 
 std::shared_ptr<i_pdu> create_default_pdu_by_command_id(command_id);
@@ -43,14 +46,14 @@ class pdu : public i_pdu {
 
  public:
   static error tryParse(const std::vector<uint8_t> &data, std::shared_ptr<i_pdu> &p_out_pdu) {
-    uint32_t command_id;
+    uint32_t cmd_id;
     binary_reader r(data);
-    r >> command_id;
+    r >> sink(COMMAND_LENGTH_SIZE) >> cmd_id;
 
     if (!r.good())
       return error::failed_pdu_deserializing;
 
-    p_out_pdu = create_default_pdu_by_command_id(static_cast<enum command_id>(command_id));
+    p_out_pdu = create_default_pdu_by_command_id(static_cast<command_id>(cmd_id));
 
     if (!p_out_pdu)
       return error::failed_pdu_deserializing;
@@ -59,7 +62,7 @@ class pdu : public i_pdu {
   }
 
  public:
-  uint32_t command_length() const override {
+  uint32_t cmd_len() const override {
     return HEADER_SIZE +
         std::apply([](auto &&... mandatory_params) {
           return (get_param_size(mandatory_params.value) + ... + 0);
@@ -69,11 +72,11 @@ class pdu : public i_pdu {
         });
   }
 
-  enum command_status command_status() const override { return _command_status; }
+  command_status cmd_status() const override { return _cmd_status; }
 
   uint32_t seq_number() const override { return _seq_number; }
 
-  void set_command_status(enum command_status command_status) override { _command_status = command_status; }
+  void set_cmd_status(command_status cmd_status) override { _cmd_status = cmd_status; }
 
   void set_seq_number(uint32_t seq_number) override { _seq_number = seq_number; }
 
@@ -90,9 +93,9 @@ class pdu : public i_pdu {
   error deserialize(const std::vector<uint8_t> &data) override {
     binary_reader r(data);
 
-    uint32_t command_status;
-    r >> sink(COMMAND_ID_SIZE) >> command_status >> _seq_number;
-    _command_status = static_cast<enum command_status>(command_status);
+    uint32_t cmd_status;
+    r >> sink(COMMAND_LENGTH_SIZE) >> sink(COMMAND_ID_SIZE) >> cmd_status >> _seq_number;
+    _cmd_status = static_cast<command_status>(cmd_status);
 
     if (!r.good())
       return error::failed_pdu_deserializing;
@@ -127,6 +130,8 @@ class pdu : public i_pdu {
 
       if (p_opt_param->deserialize_value(data) != error::no)
         return error::failed_pdu_deserializing;
+
+      _optional_params[tag] = p_opt_param;
     }
 
     return error::no;
@@ -134,7 +139,7 @@ class pdu : public i_pdu {
 
   std::vector<uint8_t> serialize() const override {
     binary_writer w;
-    w << command_length() << to_integral(command_id()) << to_integral(_command_status) << _seq_number;
+    w << cmd_len() << to_integral(cmd_id()) << to_integral(_cmd_status) << _seq_number;
 
     std::apply([&w](auto &&... args) {
       ((w << args.value), ...);
@@ -146,8 +151,31 @@ class pdu : public i_pdu {
     return w.data();
   }
 
+  std::string to_string() const override {
+    std::ostringstream sout;
+    sout << "HEADER:\n"
+         << "\tcommand length: " << cmd_len() << "\n"
+         << "\tcommand id: " << smpp::to_string(cmd_id()) << "\n"
+         << "\tcommand status: " << smpp::to_string(_cmd_status) << "\n"
+         << "\tsequence number: " << _seq_number << "\n";
+
+    sout << "MANDATORY PARAMETERS:\n";
+    std::apply([&sout](auto &&... mandatory_params) {
+      auto f = [&sout](auto &&mandatory_param) {
+        sout << "\t" << smpp::to_string(mandatory_param.tag_) << ": " << std::to_string(mandatory_param.value) << "\n";
+      };
+      (f(mandatory_params), ...);
+    }, _mandatory_params);
+
+    sout << "OPTIONAL PARAMETERS:\n";
+    for (auto &&p : _optional_params)
+      sout << "\t" << smpp::to_string(static_cast<opt_par_tag>(p.first)) << ": " << p.second->to_string() << "\n";
+
+    return sout.str();
+  }
+
  protected:
-  pdu() : _command_status(command_status::esme_r_ok), _seq_number(0) {}
+  pdu() : _cmd_status(command_status::esme_r_ok), _seq_number(0) {}
 
   pdu(const pdu &) = default;
 
@@ -159,14 +187,34 @@ class pdu : public i_pdu {
 
  private:
   template<typename optional_param_type>
-  std::optional<typename optional_param_type::underlying_type> get(optional_param_category_tag) const {
-    auto iter = _optional_params.find(optional_param_type::tag);
+  auto get(optional_param_category_tag) const {
+    return get<optional_param_type>(optional_param_category_tag(),
+                                    std::is_integral<typename optional_param_type::underlying_type>());
+  }
+
+  template<typename optional_param_type>
+  std::optional<typename optional_param_type::underlying_type> get(optional_param_category_tag, std::true_type) const {
+    auto iter = _optional_params.find(optional_param_type::tag_);
 
     if (iter == _optional_params.end())
       return std::nullopt;
 
     if (auto p_opt_param = std::dynamic_pointer_cast<optional_param_type>(iter->second))
       return p_opt_param->value;
+
+    return std::nullopt;
+  }
+
+  template<typename optional_param_type>
+  std::optional<typename optional_param_type::underlying_type::underlying_type> get(optional_param_category_tag,
+                                                                                    std::false_type) const {
+    auto iter = _optional_params.find(optional_param_type::tag_);
+
+    if (iter == _optional_params.end())
+      return std::nullopt;
+
+    if (auto p_opt_param = std::dynamic_pointer_cast<optional_param_type>(iter->second))
+      return p_opt_param->value.data;
 
     return std::nullopt;
   }
@@ -189,16 +237,9 @@ class pdu : public i_pdu {
 
   template<typename optional_param_type, typename t>
   pdu &set(const t &value, optional_param_category_tag) {
-    auto iter = _optional_params.find(optional_param_type::tag);
-
-    if (iter == _optional_params.end()) {
-      std::shared_ptr<optional_param_type> p_opt_param = std::make_shared<optional_param_type>();
-      p_opt_param->value = static_cast<typename optional_param_type::underlying_type>(value);
-      _optional_params.insert(std::make_pair(optional_param_type::tag, p_opt_param));
-    } else {
-      iter->second->value = static_cast<typename optional_param_type::underlying_type>(value);
-    }
-
+    std::shared_ptr<optional_param_type> p_opt_param = std::make_shared<optional_param_type>();
+    p_opt_param->value = static_cast<typename optional_param_type::underlying_type>(value);
+    _optional_params[optional_param_type::tag_] = p_opt_param;
     return *this;
   }
 
@@ -220,10 +261,10 @@ class pdu : public i_pdu {
   static inline uint8_t LENGTH_TLV_SIZE = sizeof(uint16_t);
 
  private:
-  enum command_status _command_status;
+  command_status _cmd_status;
   uint32_t _seq_number;
   tuple_type _mandatory_params;
-  std::map<opt_par_tag, std::shared_ptr<i_optional_param>> _optional_params;
+  std::map<uint16_t, std::shared_ptr<i_optional_param>> _optional_params;
 };
 
 class bind_transmitter
@@ -234,7 +275,7 @@ class bind_transmitter
                  addr_ton, addr_npi,
                  address_range> {
  public:
-  enum command_id command_id() const override {
+  command_id cmd_id() const override {
     return command_id::bind_transmitter;
   }
 
@@ -246,7 +287,7 @@ class bind_transmitter
 class bind_transmitter_resp
     : public pdu<system_id> {
  public:
-  enum command_id command_id() const override {
+  command_id cmd_id() const override {
     return command_id::bind_transmitter_resp;
   }
 
@@ -264,7 +305,7 @@ class bind_receiver
                  addr_npi,
                  address_range> {
  public:
-  enum command_id command_id() const override {
+  command_id cmd_id() const override {
     return command_id::bind_receiver;
   }
 
@@ -276,7 +317,7 @@ class bind_receiver
 class bind_receiver_resp
     : public pdu<system_id> {
  public:
-  enum command_id command_id() const override {
+  command_id cmd_id() const override {
     return command_id::bind_receiver_resp;
   }
 
@@ -294,7 +335,7 @@ class bind_transceiver
                  addr_npi,
                  address_range> {
  public:
-  enum command_id command_id() const override {
+  command_id cmd_id() const override {
     return command_id::bind_transceiver;
   }
 
@@ -306,7 +347,7 @@ class bind_transceiver
 class bind_transceiver_resp
     : public pdu<system_id> {
  public:
-  enum command_id command_id() const override {
+  command_id cmd_id() const override {
     return command_id::bind_transceiver_resp;
   }
 
@@ -319,7 +360,7 @@ class outbind
     : public pdu<system_id,
                  password> {
  public:
-  enum command_id command_id() const override {
+  command_id cmd_id() const override {
     return command_id::outbind;
   }
 
@@ -331,7 +372,7 @@ class outbind
 class unbind
     : public pdu<> {
  public:
-  enum command_id command_id() const override {
+  command_id cmd_id() const override {
     return command_id::unbind;
   }
 
@@ -343,7 +384,7 @@ class unbind
 class unbind_resp
     : public pdu<> {
  public:
-  enum command_id command_id() const override {
+  command_id cmd_id() const override {
     return command_id::unbind_resp;
   }
 
@@ -355,7 +396,7 @@ class unbind_resp
 class generic_nack
     : public pdu<> {
  public:
-  enum command_id command_id() const override {
+  command_id cmd_id() const override {
     return command_id::generic_nack;
   }
 
@@ -384,7 +425,7 @@ class submit_sm
                  sm_length,
                  short_message> {
  public:
-  enum command_id command_id() const override {
+  command_id cmd_id() const override {
     return command_id::submit_sm;
   }
 
@@ -396,7 +437,7 @@ class submit_sm
 class submit_sm_resp
     : public pdu<message_id> {
  public:
-  enum command_id command_id() const override {
+  command_id cmd_id() const override {
     return command_id::submit_sm_resp;
   }
 
@@ -425,7 +466,7 @@ class deliver_sm
                  sm_length,
                  short_message> {
  public:
-  enum command_id command_id() const override {
+  command_id cmd_id() const override {
     return command_id::deliver_sm;
   }
 
@@ -437,7 +478,7 @@ class deliver_sm
 class deliver_sm_resp
     : public pdu<message_id> {
  public:
-  enum command_id command_id() const override {
+  command_id cmd_id() const override {
     return command_id::deliver_sm_resp;
   }
 
@@ -458,7 +499,7 @@ class data_sm
                  registered_delivery,
                  data_coding> {
  public:
-  enum command_id command_id() const override {
+  command_id cmd_id() const override {
     return command_id::data_sm;
   }
 
@@ -470,7 +511,7 @@ class data_sm
 class data_sm_resp
     : public pdu<message_id> {
  public:
-  enum command_id command_id() const override {
+  command_id cmd_id() const override {
     return command_id::data_sm_resp;
   }
 
@@ -485,7 +526,7 @@ class query_sm
                  source_addr_npi,
                  source_addr> {
  public:
-  enum command_id command_id() const override {
+  command_id cmd_id() const override {
     return command_id::query_sm;
   }
 
@@ -500,7 +541,7 @@ class query_sm_resp
                  message_state_m,
                  error_code> {
  public:
-  enum command_id command_id() const override {
+  command_id cmd_id() const override {
     return command_id::query_sm_resp;
   }
 
@@ -519,7 +560,7 @@ class cancel_sm
                  dest_addr_npi,
                  destination_addr> {
  public:
-  enum command_id command_id() const override {
+  command_id cmd_id() const override {
     return command_id::cancel_sm;
   }
 
@@ -531,7 +572,7 @@ class cancel_sm
 class cancel_sm_resp
     : public pdu<> {
  public:
-  enum command_id command_id() const override {
+  command_id cmd_id() const override {
     return command_id::cancel_sm_resp;
   }
 
@@ -552,7 +593,7 @@ class replace_sm
                  sm_length,
                  short_message> {
  public:
-  enum command_id command_id() const override {
+  command_id cmd_id() const override {
     return command_id::replace_sm;
   }
 
@@ -564,7 +605,7 @@ class replace_sm
 class replace_sm_resp
     : public pdu<> {
  public:
-  enum command_id command_id() const override {
+  command_id cmd_id() const override {
     return command_id::replace_sm_resp;
   }
 
@@ -576,7 +617,7 @@ class replace_sm_resp
 class enquire_link
     : public pdu<> {
  public:
-  enum command_id command_id() const override {
+  command_id cmd_id() const override {
     return command_id::enquire_link;
   }
 
@@ -588,7 +629,7 @@ class enquire_link
 class enquire_link_resp
     : public pdu<> {
  public:
-  enum command_id command_id() const override {
+  command_id cmd_id() const override {
     return command_id::enquire_link_resp;
   }
 
@@ -600,7 +641,7 @@ class enquire_link_resp
 class alert_notification
     : public pdu<source_addr_ton, source_addr_npi, source_addr, esme_addr_ton, esme_addr_npi, esme_addr> {
  public:
-  enum command_id command_id() const override {
+  command_id cmd_id() const override {
     return command_id::alert_notification;
   }
 
@@ -609,8 +650,8 @@ class alert_notification
   }
 };
 
-inline std::shared_ptr<i_pdu> createDefaultPduByCommandId(enum command_id command_id) {
-  switch (command_id) {
+inline std::shared_ptr<i_pdu> create_default_pdu_by_command_id(command_id cmd_id) {
+  switch (cmd_id) {
     case command_id::submit_sm:return std::make_shared<submit_sm>();
     case command_id::submit_sm_resp:return std::make_shared<submit_sm_resp>();
     case command_id::deliver_sm:return std::make_shared<deliver_sm>();
@@ -639,6 +680,14 @@ inline std::shared_ptr<i_pdu> createDefaultPduByCommandId(enum command_id comman
   }
 
   return nullptr;
+}
+
+std::string to_string(const i_pdu &pdu) {
+  return pdu.to_string();
+}
+
+std::string to_string(const std::shared_ptr<i_pdu> &pdu) {
+  return pdu->to_string();
 }
 
 }

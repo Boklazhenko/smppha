@@ -5,6 +5,8 @@
 #ifndef SMPPHA_SMPP_ERRORS_H_
 #define SMPPHA_SMPP_ERRORS_H_
 
+#include <string>
+
 namespace smpp {
 
 enum class error {
@@ -12,6 +14,16 @@ enum class error {
   failed_opt_param_deserializing,
   failed_pdu_deserializing
 };
+
+std::string to_string(error err) {
+  switch (err) {
+    case error::no: return "no";
+    case error::failed_pdu_deserializing: return "failed_pdu_deserializing";
+    case error::failed_opt_param_deserializing: return "failed_opt_param_deserializing";
+  }
+
+  return "unknown";
+}
 
 }
 

@@ -8,6 +8,8 @@
 #include <type_traits>
 #include "pdu/types.h"
 #include <cmath>
+#include <sstream>
+#include <iomanip>
 
 namespace smpp {
 
@@ -170,6 +172,13 @@ inline std::vector<uint8_t> to_byte_vector(uint64_t number, uint8_t size) {
     result.push_back((number >> i * 7 % (sizeof(uint64_t) * 8) >> i % (sizeof(uint64_t) * 8)) & 0xFF);
 
   return result;
+}
+
+inline std::string to_hex(const std::vector<uint8_t> &v) {
+  std::ostringstream sout;
+  for (auto b : v)
+    sout << std::hex << std::setw(2) << std::setfill('0') << (unsigned) b;
+  return sout.str();
 }
 
 }
