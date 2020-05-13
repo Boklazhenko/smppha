@@ -179,7 +179,7 @@ enum class man_par_tag {
   error_code
 };
 
-std::string to_string(command_id cmd_id) {
+inline std::string to_string(command_id cmd_id) {
   switch (cmd_id) {
     case command_id::generic_nack : return "generic nack";
     case command_id::bind_receiver: return "bind receiver";
@@ -213,7 +213,7 @@ std::string to_string(command_id cmd_id) {
   return std::to_string(to_integral(cmd_id));
 }
 
-std::string to_string(command_status cmd_status) {
+inline std::string to_string(command_status cmd_status) {
   switch (cmd_status) {
     case command_status::esme_r_ok: return "no error";
     case command_status::esme_r_inv_msg_len: return "message length is invalid";
@@ -268,7 +268,7 @@ std::string to_string(command_status cmd_status) {
   return std::to_string(to_integral(cmd_status));
 }
 
-std::string to_string(opt_par_tag tag) {
+inline std::string to_string(opt_par_tag tag) {
   switch (tag) {
     case opt_par_tag::dest_addr_subunit: return "dest_addr_subunit";
     case opt_par_tag::dest_network_type: return "dest_network_type";
@@ -319,7 +319,7 @@ std::string to_string(opt_par_tag tag) {
   return std::to_string(to_integral(tag));
 }
 
-std::string to_string(man_par_tag tag) {
+inline std::string to_string(man_par_tag tag) {
   switch (tag) {
     case man_par_tag::system_id: return "system_id";
     case man_par_tag::password: return "password";

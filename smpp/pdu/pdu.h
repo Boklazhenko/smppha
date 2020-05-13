@@ -26,8 +26,8 @@ class i_pdu {
   virtual command_status cmd_status() const = 0;
   virtual uint32_t seq_number() const = 0;
 
-  virtual void set_cmd_status(command_status cmd_status) = 0;
-  virtual void set_seq_number(uint32_t seq_number) = 0;
+  virtual i_pdu &set_cmd_status(command_status cmd_status) = 0;
+  virtual i_pdu &set_seq_number(uint32_t seq_number) = 0;
 
   virtual error deserialize(const std::vector<uint8_t> &data) = 0;
   virtual std::vector<uint8_t> serialize() const = 0;
@@ -76,9 +76,15 @@ class pdu : public i_pdu {
 
   uint32_t seq_number() const override { return _seq_number; }
 
-  void set_cmd_status(command_status cmd_status) override { _cmd_status = cmd_status; }
+  pdu<mandatory_param_types...> &set_cmd_status(command_status cmd_status) override {
+    _cmd_status = cmd_status;
+    return *this;
+  }
 
-  void set_seq_number(uint32_t seq_number) override { _seq_number = seq_number; }
+  pdu<mandatory_param_types...> &set_seq_number(uint32_t seq_number) override {
+    _seq_number = seq_number;
+    return *this;
+  }
 
   template<typename param_type>
   auto get() const {
@@ -682,11 +688,11 @@ inline std::shared_ptr<i_pdu> create_default_pdu_by_command_id(command_id cmd_id
   return nullptr;
 }
 
-std::string to_string(const i_pdu &pdu) {
+inline std::string to_string(const i_pdu &pdu) {
   return pdu.to_string();
 }
 
-std::string to_string(const std::shared_ptr<i_pdu> &pdu) {
+inline std::string to_string(const std::shared_ptr<i_pdu> &pdu) {
   return pdu->to_string();
 }
 
