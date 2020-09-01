@@ -2,8 +2,8 @@
 // Created by boklazhenko on 11.05.2020.
 //
 
-#ifndef SMPPHA_SMPP_PDU_OPTIONALPARAMS_H_
-#define SMPPHA_SMPP_PDU_OPTIONALPARAMS_H_
+#ifndef SMPPHA_SMPP_PDU_OPTIONAL_PARAMS_H_
+#define SMPPHA_SMPP_PDU_OPTIONAL_PARAMS_H_
 
 #include "../errors.h"
 #include <vector>
@@ -225,4 +225,4 @@ inline std::shared_ptr<i_optional_param> create_opt_param_by_tag(opt_par_tag tag
 
 }
 
-#endif //SMPPHA_SMPP_PDU_OPTIONALPARAMS_H_
+#endif //SMPPHA_SMPP_PDU_OPTIONAL_PARAMS_H_

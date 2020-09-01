@@ -15,7 +15,7 @@ enum class error {
   failed_pdu_deserializing,
   already_writing,
   already_reading,
-  boost
+  boost,
 };
 
 inline std::string to_string(error err) {

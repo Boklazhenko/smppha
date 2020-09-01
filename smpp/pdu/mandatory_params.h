@@ -2,8 +2,8 @@
 // Created by boklazhenko on 10.05.2020.
 //
 
-#ifndef SMPPHA_SMPP_PDU_MANDATORYPARAMS_H_
-#define SMPPHA_SMPP_PDU_MANDATORYPARAMS_H_
+#ifndef SMPPHA_SMPP_PDU_MANDATORY_PARAMS_H_
+#define SMPPHA_SMPP_PDU_MANDATORY_PARAMS_H_
 
 #include "types.h"
 #include "../constants.h"
@@ -101,4 +101,4 @@ struct error_code : mandatory_param<uint8_t, man_par_tag::error_code> {};
 
 }
 
-#endif //SMPPHA_SMPP_PDU_MANDATORYPARAMS_H_
+#endif //SMPPHA_SMPP_PDU_MANDATORY_PARAMS_H_

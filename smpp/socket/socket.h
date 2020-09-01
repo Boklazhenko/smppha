@@ -15,7 +15,7 @@ namespace smpp {
 class i_pdu;
 enum class error;
 
-class session : public std::enable_shared_from_this<session> {
+class socket : public std::enable_shared_from_this<socket> {
  public:
   using write_handler = std::function<void(error)>;
   using read_handler = std::function<void(error, const std::shared_ptr<i_pdu> &)>;
@@ -23,10 +23,12 @@ class session : public std::enable_shared_from_this<session> {
   void write_async(const std::shared_ptr<i_pdu> &p_pdu, const write_handler &handler);
   void read_async(const read_handler &handler);
 
-  static std::shared_ptr<session> create(boost::asio::io_context &ioc, boost::asio::ip::tcp::socket &&sock);
+  bool is_open() const;
+
+  static std::shared_ptr<socket> create(boost::asio::io_context &ioc, boost::asio::ip::tcp::socket &&sock);
 
  private:
-  session(boost::asio::io_context &ioc, boost::asio::ip::tcp::socket &&sock);
+  socket(boost::asio::io_context &ioc, boost::asio::ip::tcp::socket &&sock);
 
   void _read_async(const read_handler &handler);
 

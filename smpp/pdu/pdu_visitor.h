@@ -2,59 +2,35 @@
 // Created by boklazhenko on 11.05.2020.
 //
 
-#ifndef SMPPHA_SMPP_PDU_PDUVISITOR_H_
-#define SMPPHA_SMPP_PDU_PDUVISITOR_H_
+#ifndef SMPPHA_SMPP_PDU_PDU_VISITOR_H_
+#define SMPPHA_SMPP_PDU_PDU_VISITOR_H_
 
 namespace smpp {
 
 class bind_transmitter;
-
 class bind_transmitter_resp;
-
 class bind_receiver;
-
 class bind_receiver_resp;
-
 class bind_transceiver;
-
 class bind_transceiver_resp;
-
 class outbind;
-
 class unbind;
-
 class unbind_resp;
-
 class generic_nack;
-
 class submit_sm;
-
 class submit_sm_resp;
-
 class deliver_sm;
-
 class deliver_sm_resp;
-
 class data_sm;
-
 class data_sm_resp;
-
 class query_sm;
-
 class query_sm_resp;
-
 class cancel_sm;
-
 class cancel_sm_resp;
-
 class replace_sm;
-
 class replace_sm_resp;
-
 class enquire_link;
-
 class enquire_link_resp;
-
 class alert_notification;
 
 class i_pdu_visitor {
@@ -218,4 +194,4 @@ class dummy_pdu_visitor : public i_pdu_visitor {
 
 }
 
-#endif //SMPPHA_SMPP_PDU_PDUVISITOR_H_
+#endif //SMPPHA_SMPP_PDU_PDU_VISITOR_H_

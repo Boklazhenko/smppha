@@ -9,11 +9,11 @@
 #include "../errors.h"
 #include <vector>
 #include <map>
-#include "optionalparams.h"
+#include "optional_params.h"
 #include <numeric>
 #include <sstream>
-#include "mandatoryparams.h"
-#include "pduvisitor.h"
+#include "mandatory_params.h"
+#include "pdu_visitor.h"
 
 namespace smpp {
 
@@ -123,8 +123,8 @@ class pdu : public i_pdu {
     while (!r.eof()) {
       uint16_t tag, length;
       r >> tag >> length;
-      std::vector<uint8_t> data(length);
-      r >> data;
+      std::vector<uint8_t> value(length);
+      r >> value;
 
       if (!r.good())
         return error::failed_pdu_deserializing;
@@ -134,7 +134,7 @@ class pdu : public i_pdu {
       if (!p_opt_param)
         return error::failed_pdu_deserializing;
 
-      if (p_opt_param->deserialize_value(data) != error::no)
+      if (p_opt_param->deserialize_value(value) != error::no)
         return error::failed_pdu_deserializing;
 
       _optional_params[tag] = p_opt_param;
