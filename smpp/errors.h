@@ -16,6 +16,7 @@ enum class error {
   already_writing,
   already_reading,
   boost,
+  aborted
 };
 
 inline std::string to_string(error err) {
@@ -26,6 +27,7 @@ inline std::string to_string(error err) {
     case error::already_writing: return "already_writing";
     case error::already_reading: return "already_reading";
     case error::boost: return "boost";
+    case error::aborted: return "aborted";
   }
 
   return "unknown";

@@ -9,6 +9,7 @@
 #include <mutex>
 #include "boost/asio.hpp"
 #include <memory>
+#include <queue>
 
 namespace smpp {
 
@@ -16,6 +17,8 @@ class i_pdu;
 enum class error;
 
 class socket : public std::enable_shared_from_this<socket> {
+  struct write_cmd;
+
  public:
   using write_handler = std::function<void(error)>;
   using read_handler = std::function<void(error, const std::shared_ptr<i_pdu> &)>;
@@ -25,15 +28,19 @@ class socket : public std::enable_shared_from_this<socket> {
 
   bool is_open() const;
 
+  void close();
+
   static std::shared_ptr<socket> create(boost::asio::io_context &ioc, boost::asio::ip::tcp::socket &&sock);
 
  private:
   socket(boost::asio::io_context &ioc, boost::asio::ip::tcp::socket &&sock);
 
+  void write_next_async();
+
   void _read_async(const read_handler &handler);
 
  private:
-  std::mutex _mutex;
+  std::mutex _sock_m;
   boost::asio::io_context &_ioc;
   boost::asio::ip::tcp::socket _sock;
 
@@ -43,6 +50,14 @@ class socket : public std::enable_shared_from_this<socket> {
   std::atomic_bool _reading;
   std::vector<uint8_t> _read_length_buff;
   std::vector<uint8_t> _read_buff;
+
+  std::queue<write_cmd> _write_cmds;
+  std::mutex _cmds_m;
+
+  struct write_cmd {
+    std::shared_ptr<smpp::i_pdu> p_pdu;
+    write_handler handler;
+  };
 };
 
 }

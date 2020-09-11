@@ -273,13 +273,16 @@ class pdu : public i_pdu {
   std::map<uint16_t, std::shared_ptr<i_optional_param>> _optional_params;
 };
 
+class bind_cmd : public pdu<system_id,
+                            password,
+                            system_type,
+                            interface_version,
+                            addr_ton, addr_npi,
+                            address_range> {
+};
+
 class bind_transmitter
-    : public pdu<system_id,
-                 password,
-                 system_type,
-                 interface_version,
-                 addr_ton, addr_npi,
-                 address_range> {
+    : public bind_cmd {
  public:
   command_id cmd_id() const override {
     return command_id::bind_transmitter;
@@ -303,13 +306,7 @@ class bind_transmitter_resp
 };
 
 class bind_receiver
-    : public pdu<system_id,
-                 password,
-                 system_type,
-                 interface_version,
-                 addr_ton,
-                 addr_npi,
-                 address_range> {
+    : public bind_cmd {
  public:
   command_id cmd_id() const override {
     return command_id::bind_receiver;
@@ -333,13 +330,7 @@ class bind_receiver_resp
 };
 
 class bind_transceiver
-    : public pdu<system_id,
-                 password,
-                 system_type,
-                 interface_version,
-                 addr_ton,
-                 addr_npi,
-                 address_range> {
+    : public bind_cmd {
  public:
   command_id cmd_id() const override {
     return command_id::bind_transceiver;
