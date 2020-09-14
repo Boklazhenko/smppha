@@ -59,6 +59,11 @@ struct optional_param : i_optional_param {
 
   error deserialize_value(const std::vector<uint8_t> &data) override {
     binary_reader reader(data);
+
+    if constexpr (!std::is_integral<typename std::remove_reference<underlying_type>::type>())
+      if constexpr (std::is_same<octet_string_type_category_tag, typename underlying_type::type_category_tag>())
+        value.data.resize(data.size());
+
     reader >> value;
     return reader.good() && reader.eof() ? error::no : error::failed_opt_param_deserializing;
   }
@@ -101,17 +106,21 @@ struct qos_time_to_live : optional_param<opt_par_tag::qos_time_to_live, uint32_t
 
 struct payload_type : optional_param<opt_par_tag::payload_type, uint8_t> {};
 
-struct additional_status_info_text : optional_param<opt_par_tag::additional_status_info_text, c_octet_string<256>> {};
+struct additional_status_info_text : optional_param<opt_par_tag::additional_status_info_text, c_octet_string < 256>> {
+};
 
-struct receipted_message_id : optional_param<opt_par_tag::receipted_message_id, c_octet_string<65>> {};
+struct receipted_message_id : optional_param<opt_par_tag::receipted_message_id, c_octet_string < 65>> {
+};
 
 struct ms_msg_wait_facilities : optional_param<opt_par_tag::ms_msg_wait_facilities, uint8_t> {};
 
 struct privacy_indicator : optional_param<opt_par_tag::privacy_indicator, uint8_t> {};
 
-struct source_subaddress : optional_param<opt_par_tag::source_subaddress, octet_string<23>> {};
+struct source_subaddress : optional_param<opt_par_tag::source_subaddress, octet_string < 23>> {
+};
 
-struct dest_subaddress : optional_param<opt_par_tag::dest_subaddress, octet_string<23>> {};
+struct dest_subaddress : optional_param<opt_par_tag::dest_subaddress, octet_string < 23>> {
+};
 
 struct user_message_reference : optional_param<opt_par_tag::user_message_reference, uint16_t> {};
 
@@ -141,10 +150,11 @@ struct set_dpf : optional_param<opt_par_tag::set_dpf, uint8_t> {};
 
 struct ms_availability_status : optional_param<opt_par_tag::ms_availability_status, uint8_t> {};
 
-struct network_error_code : optional_param<opt_par_tag::network_error_code, octet_string<3>> {};
+struct network_error_code : optional_param<opt_par_tag::network_error_code, octet_string < 3>> {
+};
 
 struct message_payload : optional_param<opt_par_tag::message_payload,
-                                        octet_string<std::numeric_limits<uint16_t>::max()>> {
+                                        octet_string < std::numeric_limits<uint16_t>::max()>> {
 };
 
 struct delivery_failure_reason : optional_param<opt_par_tag::delivery_failure_reason, uint8_t> {};
@@ -153,17 +163,20 @@ struct more_messages_to_send : optional_param<opt_par_tag::more_messages_to_send
 
 struct message_state : optional_param<opt_par_tag::message_state, uint8_t> {};
 
-struct callback_num : optional_param<opt_par_tag::callback_num, octet_string<19>> {};
+struct callback_num : optional_param<opt_par_tag::callback_num, octet_string < 19>> {
+};
 
 struct callback_num_pres_ind : optional_param<opt_par_tag::callback_num_pres_ind, uint8_t> {};
 
-struct callback_num_atag : optional_param<opt_par_tag::callback_num_atag, octet_string<65>> {};
+struct callback_num_atag : optional_param<opt_par_tag::callback_num_atag, octet_string < 65>> {
+};
 
 struct number_of_messages : optional_param<opt_par_tag::number_of_messages, uint8_t> {};
 
 struct sms_signal : optional_param<opt_par_tag::sms_signal, uint16_t> {};
 
-struct alert_on_message_delivery : optional_param<opt_par_tag::alert_on_message_delivery, octet_string<0>> {};
+struct alert_on_message_delivery : optional_param<opt_par_tag::alert_on_message_delivery, octet_string < 0>> {
+};
 
 struct its_reply_type : optional_param<opt_par_tag::its_reply_type, uint8_t> {};
 
