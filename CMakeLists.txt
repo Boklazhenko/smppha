@@ -14,4 +14,4 @@ add_library(smppha smpp/constants.h
         smpp/errors.h
         smpp/pdu/pdu.h
         smpp/pdu/pdu_visitor.h
-        smpp/socket/socket.h smpp/socket/socket.cpp)
+        smpp/socket/socket.h smpp/socket/socket.cpp smpp/pdu/segmented_info.h smpp/pdu/segmented_info.cpp)

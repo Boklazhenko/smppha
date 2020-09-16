@@ -237,7 +237,7 @@ class pdu : public i_pdu {
   }
 
   template<typename mandatory_param_type>
-  auto get(mandatory_param_category_tag, std::false_type) const {
+  const auto& get(mandatory_param_category_tag, std::false_type) const {
     return std::get<mandatory_param_type>(_mandatory_params).value.data;
   }
 
