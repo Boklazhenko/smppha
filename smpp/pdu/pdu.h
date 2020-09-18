@@ -14,6 +14,7 @@
 #include <sstream>
 #include "mandatory_params.h"
 #include "pdu_visitor.h"
+#include <chrono>
 
 namespace smpp {
 
@@ -35,6 +36,8 @@ class i_pdu {
   virtual void accept(i_pdu_visitor &visitor) = 0;
 
   virtual std::string to_string() const = 0;
+
+  virtual const std::chrono::system_clock::time_point &created() const = 0;
 };
 
 std::shared_ptr<i_pdu> create_default_pdu_by_command_id(command_id);
@@ -97,6 +100,8 @@ class pdu : public i_pdu {
   }
 
   error deserialize(const std::vector<uint8_t> &data) override {
+    _created = std::chrono::system_clock::now();
+
     binary_reader r(data);
 
     uint32_t cmd_status;
@@ -180,8 +185,10 @@ class pdu : public i_pdu {
     return sout.str();
   }
 
+  const std::chrono::system_clock::time_point &created() const final { return _created; }
+
  protected:
-  pdu() : _cmd_status(command_status::esme_r_ok), _seq_number(0) {}
+  pdu() : _cmd_status(command_status::esme_r_ok), _seq_number(0), _created(std::chrono::system_clock::now()) {}
 
   pdu(const pdu &) = default;
 
@@ -237,7 +244,7 @@ class pdu : public i_pdu {
   }
 
   template<typename mandatory_param_type>
-  const auto& get(mandatory_param_category_tag, std::false_type) const {
+  const auto &get(mandatory_param_category_tag, std::false_type) const {
     return std::get<mandatory_param_type>(_mandatory_params).value.data;
   }
 
@@ -271,6 +278,7 @@ class pdu : public i_pdu {
   uint32_t _seq_number;
   tuple_type _mandatory_params;
   std::map<uint16_t, std::shared_ptr<i_optional_param>> _optional_params;
+  std::chrono::system_clock::time_point _created;
 };
 
 class bind_cmd : public pdu<system_id,
