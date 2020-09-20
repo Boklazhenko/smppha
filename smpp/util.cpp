@@ -3,17 +3,16 @@
 //
 
 #include "util.h"
+#include <arpa/inet.h>
 
 smpp::binary_reader::binary_reader(const std::vector<uint8_t> &data)
-    : _data(data), _good(true), _curr_pos(_data.begin()) {}
+    : _data(data), _good(true), _curr_pos(_data.data()), _end(_data.data() + _data.size()) {}
 
 smpp::binary_reader &smpp::binary_reader::operator>>(uint32_t &v) {
   if (_good) {
-    if (std::distance(_curr_pos, _data.cend()) >= sizeof(uint32_t)) {
-      v = *_curr_pos++ * std::pow(2, 24);
-      v += *_curr_pos++ * std::pow(2, 16);
-      v += *_curr_pos++ * std::pow(2, 8);
-      v += *_curr_pos++;
+    if (available() >= sizeof(uint32_t)) {
+      v = ntohl(*reinterpret_cast<const uint32_t *>(_curr_pos));
+      std::advance(_curr_pos, sizeof(uint32_t));
     } else
       _good = false;
   }
@@ -23,9 +22,9 @@ smpp::binary_reader &smpp::binary_reader::operator>>(uint32_t &v) {
 
 smpp::binary_reader &smpp::binary_reader::operator>>(uint16_t &v) {
   if (_good) {
-    if (std::distance(_curr_pos, _data.cend()) >= sizeof(uint16_t)) {
-      v = *_curr_pos++ * std::pow(2, 8);
-      v += *_curr_pos++;
+    if (available() >= sizeof(uint16_t)) {
+      v = ntohs(*reinterpret_cast<const uint16_t *>(_curr_pos));
+      std::advance(_curr_pos, sizeof(uint16_t));
     } else
       _good = false;
   }
@@ -35,7 +34,7 @@ smpp::binary_reader &smpp::binary_reader::operator>>(uint16_t &v) {
 
 smpp::binary_reader &smpp::binary_reader::operator>>(uint8_t &v) {
   if (_good) {
-    if (std::distance(_curr_pos, _data.cend()) >= sizeof(uint8_t))
+    if (available() >= sizeof(uint8_t))
       v = *_curr_pos++;
     else
       _good = false;
@@ -46,7 +45,7 @@ smpp::binary_reader &smpp::binary_reader::operator>>(uint8_t &v) {
 
 smpp::binary_reader &smpp::binary_reader::operator>>(std::vector<uint8_t> &v) {
   if (_good) {
-    if (std::distance(_curr_pos, _data.cend()) >= v.size()) {
+    if (available() >= v.size()) {
       std::copy(_curr_pos, _curr_pos + v.size(), v.begin());
       std::advance(_curr_pos, v.size());
     } else
@@ -58,7 +57,7 @@ smpp::binary_reader &smpp::binary_reader::operator>>(std::vector<uint8_t> &v) {
 
 smpp::binary_reader &smpp::binary_reader::operator>>(const smpp::sink &s) {
   if (_good) {
-    if (std::distance(_curr_pos, _data.cend()) >= s.bytes_count())
+    if (available() >= s.bytes_count())
       std::advance(_curr_pos, s.bytes_count());
     else
       _good = false;
@@ -72,11 +71,11 @@ bool smpp::binary_reader::good() const {
 }
 
 bool smpp::binary_reader::eof() const {
-  return _curr_pos >= _data.end();
+  return _curr_pos >= _end;
 }
 
 size_t smpp::binary_reader::available() const {
-  return std::distance(_curr_pos, _data.end());
+  return std::distance(_curr_pos, _end);
 }
 
 smpp::binary_writer &smpp::binary_writer::operator<<(uint8_t v) {
@@ -85,12 +84,14 @@ smpp::binary_writer &smpp::binary_writer::operator<<(uint8_t v) {
 }
 
 smpp::binary_writer &smpp::binary_writer::operator<<(uint32_t v) {
-  *this << to_byte_vector(v, sizeof(uint32_t));
+  v = htonl(v);
+  _data.insert(_data.end(), reinterpret_cast<char *>(&v), reinterpret_cast<char *>(&v) + sizeof(v));
   return *this;
 }
 
 smpp::binary_writer &smpp::binary_writer::operator<<(uint16_t v) {
-  *this << to_byte_vector(v, sizeof(uint16_t));
+  v = htons(v);
+  _data.insert(_data.end(), reinterpret_cast<char *>(&v), reinterpret_cast<char *>(&v) + sizeof(v));
   return *this;
 }
 

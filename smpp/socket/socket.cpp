@@ -57,7 +57,9 @@ void smpp::socket::_read_async(const read_handler &handler) {
                           return;
                         }
 
-                        s->_read_buff.resize(to_uint32(s->_read_length_buff));
+                        uint32_t length;
+                        binary_reader(s->_read_length_buff) >> length;
+                        s->_read_buff.resize(length);
                         std::lock_guard guard(s->_sock_m);
                         asio::async_read(s->_sock,
                                          asio::buffer(s->_read_buff),

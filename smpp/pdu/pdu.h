@@ -80,13 +80,23 @@ class pdu : public i_pdu {
   uint32_t seq_number() const final { return _seq_number; }
 
   pdu<mandatory_param_types...> &set_cmd_status(command_status cmd_status) final {
-    _data.reset();
+    if (_data.has_value() && _data.value().size() > HEADER_SIZE) {
+      auto raw_cmd_status = (binary_writer() << to_integral(cmd_status)).data();
+      std::copy(raw_cmd_status.begin(),
+                raw_cmd_status.end(),
+                _data.value().begin() + COMMAND_LENGTH_SIZE + COMMAND_ID_SIZE);
+    }
     _cmd_status = cmd_status;
     return *this;
   }
 
   pdu<mandatory_param_types...> &set_seq_number(uint32_t seq_number) final {
-    _data.reset();
+    if (_data.has_value() && _data.value().size() > HEADER_SIZE) {
+      auto raw_seq_number = (binary_writer() << seq_number).data();
+      std::copy(raw_seq_number.begin(),
+                raw_seq_number.end(),
+                _data.value().begin() + COMMAND_LENGTH_SIZE + COMMAND_ID_SIZE + COMMAND_STATUS_SIZE);
+    }
     _seq_number = seq_number;
     return *this;
   }

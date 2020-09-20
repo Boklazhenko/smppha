@@ -49,10 +49,10 @@ class binary_reader {
   template<typename c_octet_string_type>
   binary_reader &read(c_octet_string_type &v, c_string_type_category_tag) {
     if (_good) {
-      if (std::distance(_curr_pos, _data.cend()) >= 1) {
+      if (available() >= 1) {
         auto begin = _curr_pos;
         bool endFound = false;
-        while (!endFound && _curr_pos != _data.end())
+        while (!endFound && _curr_pos != _end)
           endFound = *_curr_pos++ == 0;
 
         if (endFound && std::distance(begin, _curr_pos) <= v.max_length_)
@@ -69,10 +69,10 @@ class binary_reader {
   template<typename fixed_c_octet_string_type>
   binary_reader &read(fixed_c_octet_string_type &v, fixed_c_string_type_category_tag) {
     if (_good) {
-      if (std::distance(_curr_pos, _data.cend()) >= 1) {
+      if (available() >= 1) {
         auto begin = _curr_pos;
         bool endFound = false;
-        while (!endFound && _curr_pos != _data.end())
+        while (!endFound && _curr_pos != _end)
           endFound = *_curr_pos++ == 0;
 
         if (endFound && (std::distance(begin, _curr_pos) == 1 || std::distance(begin, _curr_pos) == v.length_))
@@ -103,7 +103,8 @@ class binary_reader {
  private:
   const std::vector<uint8_t> &_data;
   bool _good;
-  std::remove_reference<decltype(_data)>::type::const_iterator _curr_pos;
+  decltype(_data.data()) _curr_pos;
+  const decltype(_data.data()) _end;
 };
 
 class binary_writer {
@@ -153,26 +154,6 @@ class binary_writer {
  private:
   std::vector<uint8_t> _data;
 };
-
-inline uint32_t to_uint32(const std::vector<uint8_t> &bytes) {
-  uint32_t result = 0;
-  unsigned int k = (unsigned int) std::pow(256, (double) bytes.size() - 1);
-  for (unsigned int i = 0; i < bytes.size(); ++i) {
-    result += bytes[i] * k;
-    k /= 256;
-  }
-  return result;
-}
-
-inline std::vector<uint8_t> to_byte_vector(uint64_t number, uint8_t size) {
-  std::vector<uint8_t> result;
-  result.reserve(size);
-
-  for (int16_t i = size - 1; i >= 0; --i)
-    result.push_back((number >> i * 7 % (sizeof(uint64_t) * 8) >> i % (sizeof(uint64_t) * 8)) & 0xFF);
-
-  return result;
-}
 
 inline std::string to_hex(const std::vector<uint8_t> &v) {
   std::ostringstream sout;
