@@ -31,7 +31,7 @@ class i_pdu {
   virtual i_pdu &set_seq_number(uint32_t seq_number) = 0;
 
   virtual error deserialize(const std::vector<uint8_t> &data) = 0;
-  virtual std::vector<uint8_t> serialize() const = 0;
+  virtual const std::vector<uint8_t> &serialize() const = 0;
 
   virtual void accept(i_pdu_visitor &visitor) = 0;
 
@@ -65,7 +65,7 @@ class pdu : public i_pdu {
   }
 
  public:
-  uint32_t cmd_len() const override {
+  uint32_t cmd_len() const final {
     return HEADER_SIZE +
         std::apply([](auto &&... mandatory_params) {
           return (get_param_size(mandatory_params.value) + ... + 0);
@@ -75,16 +75,18 @@ class pdu : public i_pdu {
         });
   }
 
-  command_status cmd_status() const override { return _cmd_status; }
+  command_status cmd_status() const final { return _cmd_status; }
 
-  uint32_t seq_number() const override { return _seq_number; }
+  uint32_t seq_number() const final { return _seq_number; }
 
-  pdu<mandatory_param_types...> &set_cmd_status(command_status cmd_status) override {
+  pdu<mandatory_param_types...> &set_cmd_status(command_status cmd_status) final {
+    _data.reset();
     _cmd_status = cmd_status;
     return *this;
   }
 
-  pdu<mandatory_param_types...> &set_seq_number(uint32_t seq_number) override {
+  pdu<mandatory_param_types...> &set_seq_number(uint32_t seq_number) final {
+    _data.reset();
     _seq_number = seq_number;
     return *this;
   }
@@ -96,10 +98,11 @@ class pdu : public i_pdu {
 
   template<typename param_type, typename t>
   pdu &set(const t &value) {
+    _data.reset();
     return set<param_type>(value, typename param_type::param_category_tag());
   }
 
-  error deserialize(const std::vector<uint8_t> &data) override {
+  error deserialize(const std::vector<uint8_t> &data) final {
     _created = std::chrono::system_clock::now();
 
     binary_reader r(data);
@@ -145,10 +148,15 @@ class pdu : public i_pdu {
       _optional_params[tag] = p_opt_param;
     }
 
+    _data = data;
+
     return error::no;
   }
 
-  std::vector<uint8_t> serialize() const override {
+  const std::vector<uint8_t> &serialize() const final {
+    if (_data.has_value())
+      return _data.value();
+
     binary_writer w;
     w << cmd_len() << to_integral(cmd_id()) << to_integral(_cmd_status) << _seq_number;
 
@@ -159,7 +167,8 @@ class pdu : public i_pdu {
     for (auto &&p : _optional_params)
       w << p.second->serialize();
 
-    return w.data();
+    _data = w.data();
+    return _data.value();
   }
 
   std::string to_string() const override {
@@ -188,7 +197,11 @@ class pdu : public i_pdu {
   const std::chrono::system_clock::time_point &created() const final { return _created; }
 
  protected:
-  pdu() : _cmd_status(command_status::esme_r_ok), _seq_number(0), _created(std::chrono::system_clock::now()) {}
+  pdu()
+      : _cmd_status(command_status::esme_r_ok),
+        _seq_number(0),
+        _created(std::chrono::system_clock::now()),
+        _data(std::nullopt) {}
 
   pdu(const pdu &) = default;
 
@@ -279,6 +292,7 @@ class pdu : public i_pdu {
   tuple_type _mandatory_params;
   std::map<uint16_t, std::shared_ptr<i_optional_param>> _optional_params;
   std::chrono::system_clock::time_point _created;
+  mutable std::optional<std::vector<uint8_t>> _data;
 };
 
 class bind_cmd : public pdu<system_id,
