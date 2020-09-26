@@ -34,6 +34,7 @@ class i_pdu {
   virtual const std::vector<uint8_t> &serialize() const = 0;
 
   virtual void accept(i_pdu_visitor &visitor) = 0;
+  virtual void accept(i_shared_ptr_pdu_visitor &visitor) = 0;
 
   virtual std::string to_string() const = 0;
 
@@ -314,7 +315,7 @@ class bind_cmd : public pdu<system_id,
 };
 
 class bind_transmitter
-    : public bind_cmd {
+    : public bind_cmd, public std::enable_shared_from_this<bind_transmitter> {
  public:
   command_id cmd_id() const override {
     return command_id::bind_transmitter;
@@ -323,10 +324,14 @@ class bind_transmitter
   void accept(i_pdu_visitor &visitor) override {
     visitor.visit(*this);
   }
+
+  void accept(i_shared_ptr_pdu_visitor &visitor) override {
+    visitor.visit(shared_from_this());
+  }
 };
 
 class bind_transmitter_resp
-    : public pdu<system_id> {
+    : public pdu<system_id>, public std::enable_shared_from_this<bind_transmitter_resp> {
  public:
   command_id cmd_id() const override {
     return command_id::bind_transmitter_resp;
@@ -335,10 +340,13 @@ class bind_transmitter_resp
   void accept(i_pdu_visitor &visitor) override {
     visitor.visit(*this);
   }
+  void accept(i_shared_ptr_pdu_visitor &visitor) override {
+    visitor.visit(shared_from_this());
+  }
 };
 
 class bind_receiver
-    : public bind_cmd {
+    : public bind_cmd, public std::enable_shared_from_this<bind_receiver> {
  public:
   command_id cmd_id() const override {
     return command_id::bind_receiver;
@@ -347,10 +355,13 @@ class bind_receiver
   void accept(i_pdu_visitor &visitor) override {
     visitor.visit(*this);
   }
+  void accept(i_shared_ptr_pdu_visitor &visitor) override {
+    visitor.visit(shared_from_this());
+  }
 };
 
 class bind_receiver_resp
-    : public pdu<system_id> {
+    : public pdu<system_id>, public std::enable_shared_from_this<bind_receiver_resp> {
  public:
   command_id cmd_id() const override {
     return command_id::bind_receiver_resp;
@@ -359,10 +370,14 @@ class bind_receiver_resp
   void accept(i_pdu_visitor &visitor) override {
     visitor.visit(*this);
   }
+
+  void accept(i_shared_ptr_pdu_visitor &visitor) override {
+    visitor.visit(shared_from_this());
+  }
 };
 
 class bind_transceiver
-    : public bind_cmd {
+    : public bind_cmd, public std::enable_shared_from_this<bind_transceiver> {
  public:
   command_id cmd_id() const override {
     return command_id::bind_transceiver;
@@ -371,10 +386,14 @@ class bind_transceiver
   void accept(i_pdu_visitor &visitor) override {
     visitor.visit(*this);
   }
+
+  void accept(i_shared_ptr_pdu_visitor &visitor) override {
+    visitor.visit(shared_from_this());
+  }
 };
 
 class bind_transceiver_resp
-    : public pdu<system_id> {
+    : public pdu<system_id>, public std::enable_shared_from_this<bind_transceiver_resp> {
  public:
   command_id cmd_id() const override {
     return command_id::bind_transceiver_resp;
@@ -383,11 +402,14 @@ class bind_transceiver_resp
   void accept(i_pdu_visitor &visitor) override {
     visitor.visit(*this);
   }
+
+  void accept(i_shared_ptr_pdu_visitor &visitor) override {
+    visitor.visit(shared_from_this());
+  }
 };
 
 class outbind
-    : public pdu<system_id,
-                 password> {
+    : public pdu<system_id, password>, public std::enable_shared_from_this<outbind> {
  public:
   command_id cmd_id() const override {
     return command_id::outbind;
@@ -396,10 +418,14 @@ class outbind
   void accept(i_pdu_visitor &visitor) override {
     visitor.visit(*this);
   }
+
+  void accept(i_shared_ptr_pdu_visitor &visitor) override {
+    visitor.visit(shared_from_this());
+  }
 };
 
 class unbind
-    : public pdu<> {
+    : public pdu<>, public std::enable_shared_from_this<unbind> {
  public:
   command_id cmd_id() const override {
     return command_id::unbind;
@@ -408,10 +434,14 @@ class unbind
   void accept(i_pdu_visitor &visitor) override {
     visitor.visit(*this);
   }
+
+  void accept(i_shared_ptr_pdu_visitor &visitor) override {
+    visitor.visit(shared_from_this());
+  }
 };
 
 class unbind_resp
-    : public pdu<> {
+    : public pdu<>, public std::enable_shared_from_this<unbind_resp> {
  public:
   command_id cmd_id() const override {
     return command_id::unbind_resp;
@@ -420,10 +450,14 @@ class unbind_resp
   void accept(i_pdu_visitor &visitor) override {
     visitor.visit(*this);
   }
+
+  void accept(i_shared_ptr_pdu_visitor &visitor) override {
+    visitor.visit(shared_from_this());
+  }
 };
 
 class generic_nack
-    : public pdu<> {
+    : public pdu<>, public std::enable_shared_from_this<generic_nack> {
  public:
   command_id cmd_id() const override {
     return command_id::generic_nack;
@@ -431,6 +465,10 @@ class generic_nack
 
   void accept(i_pdu_visitor &visitor) override {
     visitor.visit(*this);
+  }
+
+  void accept(i_shared_ptr_pdu_visitor &visitor) override {
+    visitor.visit(shared_from_this());
   }
 };
 
@@ -452,7 +490,8 @@ class submit_sm
                  data_coding,
                  sm_default_msg_id,
                  sm_length,
-                 short_message> {
+                 short_message>,
+      public std::enable_shared_from_this<submit_sm> {
  public:
   command_id cmd_id() const override {
     return command_id::submit_sm;
@@ -461,10 +500,14 @@ class submit_sm
   void accept(i_pdu_visitor &visitor) override {
     visitor.visit(*this);
   }
+
+  void accept(i_shared_ptr_pdu_visitor &visitor) override {
+    visitor.visit(shared_from_this());
+  }
 };
 
 class submit_sm_resp
-    : public pdu<message_id> {
+    : public pdu<message_id>, public std::enable_shared_from_this<submit_sm_resp> {
  public:
   command_id cmd_id() const override {
     return command_id::submit_sm_resp;
@@ -472,6 +515,10 @@ class submit_sm_resp
 
   void accept(i_pdu_visitor &visitor) override {
     visitor.visit(*this);
+  }
+
+  void accept(i_shared_ptr_pdu_visitor &visitor) override {
+    visitor.visit(shared_from_this());
   }
 };
 
@@ -493,7 +540,8 @@ class deliver_sm
                  data_coding,
                  sm_default_msg_id,
                  sm_length,
-                 short_message> {
+                 short_message>,
+      public std::enable_shared_from_this<deliver_sm> {
  public:
   command_id cmd_id() const override {
     return command_id::deliver_sm;
@@ -502,10 +550,14 @@ class deliver_sm
   void accept(i_pdu_visitor &visitor) override {
     visitor.visit(*this);
   }
+
+  void accept(i_shared_ptr_pdu_visitor &visitor) override {
+    visitor.visit(shared_from_this());
+  }
 };
 
 class deliver_sm_resp
-    : public pdu<message_id> {
+    : public pdu<message_id>, public std::enable_shared_from_this<deliver_sm_resp> {
  public:
   command_id cmd_id() const override {
     return command_id::deliver_sm_resp;
@@ -513,6 +565,10 @@ class deliver_sm_resp
 
   void accept(i_pdu_visitor &visitor) override {
     visitor.visit(*this);
+  }
+
+  void accept(i_shared_ptr_pdu_visitor &visitor) override {
+    visitor.visit(shared_from_this());
   }
 };
 
@@ -526,7 +582,8 @@ class data_sm
                  destination_addr,
                  esm_class,
                  registered_delivery,
-                 data_coding> {
+                 data_coding>,
+      public std::enable_shared_from_this<data_sm> {
  public:
   command_id cmd_id() const override {
     return command_id::data_sm;
@@ -535,10 +592,14 @@ class data_sm
   void accept(i_pdu_visitor &visitor) override {
     visitor.visit(*this);
   }
+
+  void accept(i_shared_ptr_pdu_visitor &visitor) override {
+    visitor.visit(shared_from_this());
+  }
 };
 
 class data_sm_resp
-    : public pdu<message_id> {
+    : public pdu<message_id>, public std::enable_shared_from_this<data_sm_resp> {
  public:
   command_id cmd_id() const override {
     return command_id::data_sm_resp;
@@ -547,13 +608,17 @@ class data_sm_resp
   void accept(i_pdu_visitor &visitor) override {
     visitor.visit(*this);
   }
+
+  void accept(i_shared_ptr_pdu_visitor &visitor) override {
+    visitor.visit(shared_from_this());
+  }
 };
 
 class query_sm
     : public pdu<message_id,
                  source_addr_ton,
                  source_addr_npi,
-                 source_addr> {
+                 source_addr>, public std::enable_shared_from_this<query_sm> {
  public:
   command_id cmd_id() const override {
     return command_id::query_sm;
@@ -562,13 +627,17 @@ class query_sm
   void accept(i_pdu_visitor &visitor) override {
     visitor.visit(*this);
   }
+
+  void accept(i_shared_ptr_pdu_visitor &visitor) override {
+    visitor.visit(shared_from_this());
+  }
 };
 
 class query_sm_resp
     : public pdu<message_id,
                  final_date,
                  message_state_m,
-                 error_code> {
+                 error_code>, public std::enable_shared_from_this<query_sm_resp> {
  public:
   command_id cmd_id() const override {
     return command_id::query_sm_resp;
@@ -576,6 +645,10 @@ class query_sm_resp
 
   void accept(i_pdu_visitor &visitor) override {
     visitor.visit(*this);
+  }
+
+  void accept(i_shared_ptr_pdu_visitor &visitor) override {
+    visitor.visit(shared_from_this());
   }
 };
 
@@ -587,7 +660,7 @@ class cancel_sm
                  source_addr,
                  dest_addr_ton,
                  dest_addr_npi,
-                 destination_addr> {
+                 destination_addr>, public std::enable_shared_from_this<cancel_sm> {
  public:
   command_id cmd_id() const override {
     return command_id::cancel_sm;
@@ -596,10 +669,14 @@ class cancel_sm
   void accept(i_pdu_visitor &visitor) override {
     visitor.visit(*this);
   }
+
+  void accept(i_shared_ptr_pdu_visitor &visitor) override {
+    visitor.visit(shared_from_this());
+  }
 };
 
 class cancel_sm_resp
-    : public pdu<> {
+    : public pdu<>, public std::enable_shared_from_this<cancel_sm_resp> {
  public:
   command_id cmd_id() const override {
     return command_id::cancel_sm_resp;
@@ -607,6 +684,10 @@ class cancel_sm_resp
 
   void accept(i_pdu_visitor &visitor) override {
     visitor.visit(*this);
+  }
+
+  void accept(i_shared_ptr_pdu_visitor &visitor) override {
+    visitor.visit(shared_from_this());
   }
 };
 
@@ -620,7 +701,7 @@ class replace_sm
                  registered_delivery,
                  sm_default_msg_id,
                  sm_length,
-                 short_message> {
+                 short_message>, public std::enable_shared_from_this<replace_sm> {
  public:
   command_id cmd_id() const override {
     return command_id::replace_sm;
@@ -629,10 +710,14 @@ class replace_sm
   void accept(i_pdu_visitor &visitor) override {
     visitor.visit(*this);
   }
+
+  void accept(i_shared_ptr_pdu_visitor &visitor) override {
+    visitor.visit(shared_from_this());
+  }
 };
 
 class replace_sm_resp
-    : public pdu<> {
+    : public pdu<>, public std::enable_shared_from_this<replace_sm_resp> {
  public:
   command_id cmd_id() const override {
     return command_id::replace_sm_resp;
@@ -641,10 +726,14 @@ class replace_sm_resp
   void accept(i_pdu_visitor &visitor) override {
     visitor.visit(*this);
   }
+
+  void accept(i_shared_ptr_pdu_visitor &visitor) override {
+    visitor.visit(shared_from_this());
+  }
 };
 
 class enquire_link
-    : public pdu<> {
+    : public pdu<>, public std::enable_shared_from_this<enquire_link> {
  public:
   command_id cmd_id() const override {
     return command_id::enquire_link;
@@ -653,10 +742,14 @@ class enquire_link
   void accept(i_pdu_visitor &visitor) override {
     visitor.visit(*this);
   }
+
+  void accept(i_shared_ptr_pdu_visitor &visitor) override {
+    visitor.visit(shared_from_this());
+  }
 };
 
 class enquire_link_resp
-    : public pdu<> {
+    : public pdu<>, public std::enable_shared_from_this<enquire_link_resp> {
  public:
   command_id cmd_id() const override {
     return command_id::enquire_link_resp;
@@ -665,10 +758,15 @@ class enquire_link_resp
   void accept(i_pdu_visitor &visitor) override {
     visitor.visit(*this);
   }
+
+  void accept(i_shared_ptr_pdu_visitor &visitor) override {
+    visitor.visit(shared_from_this());
+  }
 };
 
 class alert_notification
-    : public pdu<source_addr_ton, source_addr_npi, source_addr, esme_addr_ton, esme_addr_npi, esme_addr> {
+    : public pdu<source_addr_ton, source_addr_npi, source_addr, esme_addr_ton, esme_addr_npi, esme_addr>,
+      public std::enable_shared_from_this<alert_notification> {
  public:
   command_id cmd_id() const override {
     return command_id::alert_notification;
@@ -676,6 +774,10 @@ class alert_notification
 
   void accept(i_pdu_visitor &visitor) override {
     visitor.visit(*this);
+  }
+
+  void accept(i_shared_ptr_pdu_visitor &visitor) override {
+    visitor.visit(shared_from_this());
   }
 };
 

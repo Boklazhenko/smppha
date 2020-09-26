@@ -5,6 +5,8 @@
 #ifndef SMPPHA_SMPP_PDU_PDU_VISITOR_H_
 #define SMPPHA_SMPP_PDU_PDU_VISITOR_H_
 
+#include <memory>
+
 namespace smpp {
 
 class bind_transmitter;
@@ -86,6 +88,61 @@ class i_pdu_visitor {
   virtual void visit(enquire_link_resp &) = 0;
 
   virtual void visit(alert_notification &) = 0;
+};
+
+class i_shared_ptr_pdu_visitor {
+ public:
+  virtual ~i_shared_ptr_pdu_visitor() = default;
+
+  virtual void visit(const std::shared_ptr<bind_transmitter> &) = 0;
+
+  virtual void visit(const std::shared_ptr<bind_transmitter_resp> &) = 0;
+
+  virtual void visit(const std::shared_ptr<bind_receiver> &) = 0;
+
+  virtual void visit(const std::shared_ptr<bind_receiver_resp> &) = 0;
+
+  virtual void visit(const std::shared_ptr<bind_transceiver> &) = 0;
+
+  virtual void visit(const std::shared_ptr<bind_transceiver_resp> &) = 0;
+
+  virtual void visit(const std::shared_ptr<outbind> &) = 0;
+
+  virtual void visit(const std::shared_ptr<unbind> &) = 0;
+
+  virtual void visit(const std::shared_ptr<unbind_resp> &) = 0;
+
+  virtual void visit(const std::shared_ptr<generic_nack> &) = 0;
+
+  virtual void visit(const std::shared_ptr<submit_sm> &) = 0;
+
+  virtual void visit(const std::shared_ptr<submit_sm_resp> &) = 0;
+
+  virtual void visit(const std::shared_ptr<deliver_sm> &) = 0;
+
+  virtual void visit(const std::shared_ptr<deliver_sm_resp> &) = 0;
+
+  virtual void visit(const std::shared_ptr<data_sm> &) = 0;
+
+  virtual void visit(const std::shared_ptr<data_sm_resp> &) = 0;
+
+  virtual void visit(const std::shared_ptr<query_sm> &) = 0;
+
+  virtual void visit(const std::shared_ptr<query_sm_resp> &) = 0;
+
+  virtual void visit(const std::shared_ptr<cancel_sm> &) = 0;
+
+  virtual void visit(const std::shared_ptr<cancel_sm_resp> &) = 0;
+
+  virtual void visit(const std::shared_ptr<replace_sm> &) = 0;
+
+  virtual void visit(const std::shared_ptr<replace_sm_resp> &) = 0;
+
+  virtual void visit(const std::shared_ptr<enquire_link> &) = 0;
+
+  virtual void visit(const std::shared_ptr<enquire_link_resp> &) = 0;
+
+  virtual void visit(const std::shared_ptr<alert_notification> &) = 0;
 };
 
 class dummy_pdu_visitor : public i_pdu_visitor {
@@ -190,6 +247,109 @@ class dummy_pdu_visitor : public i_pdu_visitor {
     //do nothing
   }
 
+};
+
+class dummy_shared_ptr_pdu_visitor : public i_shared_ptr_pdu_visitor {
+ public:
+  void visit(const std::shared_ptr<bind_transmitter> &ptr) override {
+    //do nothing
+  }
+
+  void visit(const std::shared_ptr<bind_transmitter_resp> &ptr) override {
+    //do nothing
+  }
+
+  void visit(const std::shared_ptr<bind_receiver> &ptr) override {
+    //do nothing
+  }
+
+  void visit(const std::shared_ptr<bind_receiver_resp> &ptr) override {
+    //do nothing
+  }
+
+  void visit(const std::shared_ptr<bind_transceiver> &ptr) override {
+    //do nothing
+  }
+
+  void visit(const std::shared_ptr<bind_transceiver_resp> &ptr) override {
+    //do nothing
+  }
+
+  void visit(const std::shared_ptr<outbind> &ptr) override {
+    //do nothing
+  }
+
+  void visit(const std::shared_ptr<unbind> &ptr) override {
+    //do nothing
+  }
+
+  void visit(const std::shared_ptr<unbind_resp> &ptr) override {
+    //do nothing
+  }
+
+  void visit(const std::shared_ptr<generic_nack> &ptr) override {
+    //do nothing
+  }
+
+  void visit(const std::shared_ptr<submit_sm> &ptr) override {
+    //do nothing
+  }
+
+  void visit(const std::shared_ptr<submit_sm_resp> &ptr) override {
+    //do nothing
+  }
+
+  void visit(const std::shared_ptr<deliver_sm> &ptr) override {
+    //do nothing
+  }
+
+  void visit(const std::shared_ptr<deliver_sm_resp> &ptr) override {
+    //do nothing
+  }
+
+  void visit(const std::shared_ptr<data_sm> &ptr) override {
+    //do nothing
+  }
+
+  void visit(const std::shared_ptr<data_sm_resp> &ptr) override {
+    //do nothing
+  }
+
+  void visit(const std::shared_ptr<query_sm> &ptr) override {
+    //do nothing
+  }
+
+  void visit(const std::shared_ptr<query_sm_resp> &ptr) override {
+    //do nothing
+  }
+
+  void visit(const std::shared_ptr<cancel_sm> &ptr) override {
+    //do nothing
+  }
+
+  void visit(const std::shared_ptr<cancel_sm_resp> &ptr) override {
+    //do nothing
+  }
+
+  void visit(const std::shared_ptr<replace_sm> &ptr) override {
+    //do nothing
+  }
+
+  void visit(const std::shared_ptr<replace_sm_resp> &ptr) override {
+    //do nothing
+  }
+
+  void visit(const std::shared_ptr<enquire_link> &ptr) override {
+    //do nothing
+  }
+
+  void visit(const std::shared_ptr<enquire_link_resp> &ptr) override {
+    //do nothing
+  }
+
+  void visit(const std::shared_ptr<alert_notification> &ptr) override {
+    //do nothing
+  }
 };
 
 }
