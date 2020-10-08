@@ -6,8 +6,12 @@
 #include "../errors.h"
 #include "../pdu/pdu.h"
 
-smpp::socket::socket(boost::asio::io_context &ioc, boost::asio::ip::tcp::socket &&sock)
-    : _ioc(ioc), _sock(std::move(sock)), _writing(false), _reading(false), _read_length_buff(sizeof(uint32_t)) {
+smpp::socket::socket(boost::asio::io_context &ioc)
+    : _ioc(ioc),
+      _sock(boost::asio::ip::tcp::socket(_ioc)),
+      _writing(false),
+      _reading(false),
+      _read_length_buff(sizeof(uint32_t)) {
 
 }
 
@@ -33,9 +37,8 @@ void smpp::socket::read_async(const read_handler &handler) {
   _read_async(handler);
 }
 
-std::shared_ptr<smpp::socket> smpp::socket::create(boost::asio::io_context &ioc,
-                                                   boost::asio::ip::tcp::socket &&sock) {
-  return std::shared_ptr<socket>(new socket(ioc, std::move(sock)));
+std::shared_ptr<smpp::socket> smpp::socket::create(boost::asio::io_context &ioc) {
+  return std::shared_ptr<socket>(new socket(ioc));
 }
 
 void smpp::socket::_read_async(const read_handler &handler) {
@@ -123,6 +126,19 @@ void smpp::socket::close() {
 
   {
     std::lock_guard guard(_sock_m);
-    _sock.close();
+    boost::system::error_code ec;
+    _sock.cancel(ec);
+    _sock.close(ec);
   }
+}
+
+void smpp::socket::open_async(const boost::asio::ip::tcp::endpoint &endpoint,
+                              const smpp::socket::open_handler &handler) {
+  _sock.async_connect(endpoint, [handler](boost::system::error_code ec) {
+    handler(ec ? error::boost : error::no);
+  });
+}
+
+boost::asio::ip::tcp::socket &smpp::socket::handle() {
+  return _sock;
 }

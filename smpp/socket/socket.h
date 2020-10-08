@@ -20,6 +20,7 @@ class socket : public std::enable_shared_from_this<socket> {
   struct write_cmd;
 
  public:
+  using open_handler = std::function<void(error)>;
   using write_handler = std::function<void(error)>;
   using read_handler = std::function<void(error, const std::shared_ptr<i_pdu> &)>;
 
@@ -28,12 +29,15 @@ class socket : public std::enable_shared_from_this<socket> {
 
   bool is_open() const;
 
+  void open_async(const boost::asio::ip::tcp::endpoint &endpoint, const open_handler &handler);
   void close();
 
-  static std::shared_ptr<socket> create(boost::asio::io_context &ioc, boost::asio::ip::tcp::socket &&sock);
+  boost::asio::ip::tcp::socket & handle();
+
+  static std::shared_ptr<socket> create(boost::asio::io_context &ioc);
 
  private:
-  socket(boost::asio::io_context &ioc, boost::asio::ip::tcp::socket &&sock);
+  explicit socket(boost::asio::io_context &ioc);
 
   void write_next_async();
 
