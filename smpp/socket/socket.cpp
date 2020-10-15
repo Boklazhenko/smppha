@@ -3,7 +3,6 @@
 //
 
 #include "socket.h"
-#include "../errors.h"
 #include "../pdu/pdu.h"
 
 smpp::socket::socket(boost::asio::io_context &ioc)
@@ -29,7 +28,7 @@ void smpp::socket::read_async(const read_handler &handler) {
 
   if (_reading.exchange(true)) {
     _ioc.post([s = shared_from_this(), handler]() {
-      handler(error::already_reading, nullptr);
+      handler(boost::system::errc::make_error_code(boost::system::errc::operation_in_progress), nullptr);
     });
     return;
   }
@@ -49,7 +48,7 @@ void smpp::socket::_read_async(const read_handler &handler) {
                       [s = shared_from_this(), handler](const system::error_code &ec, size_t size) {
                         if (ec) {
                           s->_reading = false;
-                          handler(error::boost, nullptr);
+                          handler(ec, nullptr);
                           return;
                         }
 
@@ -69,12 +68,12 @@ void smpp::socket::_read_async(const read_handler &handler) {
                                          [s, handler](const system::error_code &ec, size_t size) {
                                            s->_reading = false;
                                            if (ec) {
-                                             handler(error::boost, nullptr);
+                                             handler(ec, nullptr);
                                              return;
                                            }
 
                                            std::shared_ptr<i_pdu> p_pdu;
-                                           error e = pdu<>::tryParse(s->_read_buff, p_pdu);
+                                           boost::system::error_code e = pdu<>::tryParse(s->_read_buff, p_pdu);
                                            handler(e, p_pdu);
                                          });
                       });
@@ -109,7 +108,7 @@ void smpp::socket::write_next_async() {
                     [s = shared_from_this(), handler = cmd.handler](const system::error_code &ec, size_t size) {
                       s->_writing = false;
                       s->write_next_async();
-                      handler(ec ? error::boost : error::no);
+                      handler(ec);
                     });
 }
 
@@ -118,7 +117,7 @@ void smpp::socket::close() {
     std::lock_guard guard(_cmds_m);
     while (!_write_cmds.empty()) {
       _ioc.post([handler = _write_cmds.front().handler]() {
-        handler(error::aborted);
+        handler(boost::system::errc::make_error_code(boost::system::errc::operation_canceled));
       });
       _write_cmds.pop();
     }
@@ -135,7 +134,7 @@ void smpp::socket::close() {
 void smpp::socket::open_async(const boost::asio::ip::tcp::endpoint &endpoint,
                               const smpp::socket::open_handler &handler) {
   _sock.async_connect(endpoint, [handler](boost::system::error_code ec) {
-    handler(ec ? error::boost : error::no);
+    handler(ec);
   });
 }
 

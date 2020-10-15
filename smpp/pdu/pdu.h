@@ -6,7 +6,6 @@
 #define SMPPHA_SMPP_PDU_PDU_H_
 
 #include "../constants.h"
-#include "../errors.h"
 #include <vector>
 #include <map>
 #include "optional_params.h"
@@ -15,6 +14,7 @@
 #include "mandatory_params.h"
 #include "pdu_visitor.h"
 #include <chrono>
+#include "boost/system/error_code.hpp"
 
 namespace smpp {
 
@@ -30,7 +30,7 @@ class i_pdu {
   virtual i_pdu &set_cmd_status(command_status cmd_status) = 0;
   virtual i_pdu &set_seq_number(uint32_t seq_number) = 0;
 
-  virtual error deserialize(const std::vector<uint8_t> &data) = 0;
+  virtual boost::system::error_code deserialize(const std::vector<uint8_t> &data) = 0;
   virtual const std::vector<uint8_t> &serialize() const = 0;
 
   virtual void accept(i_pdu_visitor &visitor) = 0;
@@ -49,18 +49,19 @@ class pdu : public i_pdu {
   using tuple_type = std::tuple<mandatory_param_types...>;
 
  public:
-  static error tryParse(const std::vector<uint8_t> &data, std::shared_ptr<i_pdu> &p_out_pdu) {
+  static boost::system::error_code tryParse(const std::vector<uint8_t> &data, std::shared_ptr<i_pdu> &p_out_pdu) {
     uint32_t cmd_id;
     binary_reader r(data);
     r >> sink(COMMAND_LENGTH_SIZE) >> cmd_id;
 
+    using namespace boost::system;
     if (!r.good())
-      return error::failed_pdu_deserializing;
+      return errc::make_error_code(errc::protocol_error);
 
     p_out_pdu = create_default_pdu_by_command_id(static_cast<command_id>(cmd_id));
 
     if (!p_out_pdu)
-      return error::failed_pdu_deserializing;
+      return errc::make_error_code(errc::protocol_error);
 
     return p_out_pdu->deserialize(data);
   }
@@ -113,7 +114,7 @@ class pdu : public i_pdu {
     return set<param_type>(value, typename param_type::param_category_tag());
   }
 
-  error deserialize(const std::vector<uint8_t> &data) final {
+  boost::system::error_code deserialize(const std::vector<uint8_t> &data) final {
     _created = std::chrono::system_clock::now();
 
     binary_reader r(data);
@@ -122,8 +123,9 @@ class pdu : public i_pdu {
     r >> sink(COMMAND_LENGTH_SIZE) >> sink(COMMAND_ID_SIZE) >> cmd_status >> _seq_number;
     _cmd_status = static_cast<command_status>(cmd_status);
 
+    using namespace boost::system;
     if (!r.good())
-      return error::failed_pdu_deserializing;
+      return errc::make_error_code(errc::protocol_error);
 
     std::apply([&r, this](auto &&... mandatory_params) {
       auto f = [&r, this](auto &&mandatory_param) {
@@ -137,7 +139,7 @@ class pdu : public i_pdu {
     }, _mandatory_params);
 
     if (!r.good())
-      return error::failed_pdu_deserializing;
+      return errc::make_error_code(errc::protocol_error);
 
     while (!r.eof()) {
       uint16_t tag, length;
@@ -146,22 +148,22 @@ class pdu : public i_pdu {
       r >> value;
 
       if (!r.good())
-        return error::failed_pdu_deserializing;
+        return errc::make_error_code(errc::protocol_error);
 
       std::shared_ptr<i_optional_param> p_opt_param = create_opt_param_by_tag(static_cast<opt_par_tag>(tag));
 
       if (!p_opt_param)
-        return error::failed_pdu_deserializing;
+        return errc::make_error_code(errc::protocol_error);
 
-      if (p_opt_param->deserialize_value(value) != error::no)
-        return error::failed_pdu_deserializing;
+      if (p_opt_param->deserialize_value(value))
+        return errc::make_error_code(errc::protocol_error);
 
       _optional_params[tag] = p_opt_param;
     }
 
     _data = data;
 
-    return error::no;
+    return errc::make_error_code(errc::success);
   }
 
   const std::vector<uint8_t> &serialize() const final {

@@ -5,13 +5,13 @@
 #ifndef SMPPHA_SMPP_PDU_OPTIONAL_PARAMS_H_
 #define SMPPHA_SMPP_PDU_OPTIONAL_PARAMS_H_
 
-#include "../errors.h"
 #include <vector>
 #include <cstdint>
 #include "types.h"
 #include "../util.h"
 #include "../constants.h"
 #include <memory>
+#include <boost/system/error_code.hpp>
 
 namespace smpp {
 
@@ -19,7 +19,7 @@ struct i_optional_param {
   using param_category_tag = optional_param_category_tag;
 
   virtual ~i_optional_param() = default;
-  virtual error deserialize_value(const std::vector<uint8_t> &data) = 0;
+  virtual boost::system::error_code deserialize_value(const std::vector<uint8_t> &data) = 0;
   virtual std::vector<uint8_t> serialize() const = 0;
   virtual uint16_t length() const = 0;
   virtual std::string to_string() const = 0;
@@ -29,9 +29,9 @@ struct unknown_optional_param : i_optional_param {
   explicit unknown_optional_param(uint16_t tag)
       : tag_(tag) {}
 
-  error deserialize_value(const std::vector<uint8_t> &data) override {
+  boost::system::error_code deserialize_value(const std::vector<uint8_t> &data) override {
     value.data = data;
-    return error::no;
+    return boost::system::error_code();
   }
 
   std::vector<uint8_t> serialize() const override {
@@ -57,7 +57,7 @@ struct optional_param : i_optional_param {
 
   using underlying_type = t;
 
-  error deserialize_value(const std::vector<uint8_t> &data) override {
+  boost::system::error_code deserialize_value(const std::vector<uint8_t> &data) override {
     binary_reader reader(data);
 
     if constexpr (!std::is_integral<typename std::remove_reference<underlying_type>::type>())
@@ -65,7 +65,8 @@ struct optional_param : i_optional_param {
         value.data.resize(data.size());
 
     reader >> value;
-    return reader.good() && reader.eof() ? error::no : error::failed_opt_param_deserializing;
+    using namespace boost::system;
+    return errc::make_error_code(reader.good() && reader.eof() ? errc::success : errc::protocol_error);
   }
 
   std::vector<uint8_t> serialize() const override {

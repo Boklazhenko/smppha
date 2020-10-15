@@ -10,19 +10,19 @@
 #include "boost/asio.hpp"
 #include <memory>
 #include <queue>
+#include "boost/system/error_code.hpp"
 
 namespace smpp {
 
 class i_pdu;
-enum class error;
 
 class socket : public std::enable_shared_from_this<socket> {
   struct write_cmd;
 
  public:
-  using open_handler = std::function<void(error)>;
-  using write_handler = std::function<void(error)>;
-  using read_handler = std::function<void(error, const std::shared_ptr<i_pdu> &)>;
+  using open_handler = std::function<void(boost::system::error_code)>;
+  using write_handler = std::function<void(boost::system::error_code)>;
+  using read_handler = std::function<void(boost::system::error_code, const std::shared_ptr<i_pdu> &)>;
 
   void write_async(const std::shared_ptr<i_pdu> &p_pdu, const write_handler &handler);
   void read_async(const read_handler &handler);
@@ -32,7 +32,7 @@ class socket : public std::enable_shared_from_this<socket> {
   void open_async(const boost::asio::ip::tcp::endpoint &endpoint, const open_handler &handler);
   void close();
 
-  boost::asio::ip::tcp::socket & handle();
+  boost::asio::ip::tcp::socket &handle();
 
   static std::shared_ptr<socket> create(boost::asio::io_context &ioc);
 
