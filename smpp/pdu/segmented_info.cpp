@@ -7,12 +7,14 @@
 
 smpp::segmented_info::segmented_info(const smpp::submit_sm &pdu)
     : total_parts(1), part(1), id(0) {
+  const std::vector<uint8_t> &sm = pdu.get<short_message>();
   if (pdu.get<esm_class>() & 0x40) {
-    const std::vector<uint8_t> &sm = pdu.get<short_message>();
     if (sm.empty())
       return;
 
     int udhl = std::min(static_cast<uint8_t>(sm[0] + 1), static_cast<uint8_t>(sm.size()));
+    raw_text.insert(raw_text.end(), sm.begin() + udhl, sm.end());
+
     for (const unsigned char *rp = sm.data() + 1; rp < sm.data() + udhl;) {
       int iei = *rp++;
       int iel = *rp++;
@@ -41,5 +43,6 @@ smpp::segmented_info::segmented_info(const smpp::submit_sm &pdu)
     id = pdu.get<sar_msg_ref_num>().value_or(0);
     part = pdu.get<sar_segment_seqnum>().value_or(1);
     total_parts = sar_total_segments_.value();
+    raw_text = sm;
   }
 }

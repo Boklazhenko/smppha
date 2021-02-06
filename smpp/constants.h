@@ -11,6 +11,17 @@
 
 namespace smpp {
 
+enum class delivery_receipt_state : uint8_t {
+  enroute = 1,
+  delivered,
+  expired,
+  deleted,
+  undeliverable,
+  accepted,
+  unknown,
+  rejected,
+};
+
 enum class command_id : uint32_t {
   generic_nack = 0x80000000,
   bind_receiver = 0x00000001,
@@ -178,6 +189,21 @@ enum class man_par_tag {
   final_date,
   error_code
 };
+
+inline std::string to_string(delivery_receipt_state state) {
+  switch (state) {
+    case delivery_receipt_state::enroute: return "ENROUTE";
+    case delivery_receipt_state::delivered: return "DELIVRD";
+    case delivery_receipt_state::expired: return "EXPIRED";
+    case delivery_receipt_state::deleted: return "DELETED";
+    case delivery_receipt_state::undeliverable: return "UNDELIV";
+    case delivery_receipt_state::accepted: return "ACCEPTD";
+    case delivery_receipt_state::unknown: return "UNKNOWN";
+    case delivery_receipt_state::rejected: return "REJECTD";
+  }
+
+  return std::to_string(to_integral(state));
+}
 
 inline std::string to_string(command_id cmd_id) {
   switch (cmd_id) {
