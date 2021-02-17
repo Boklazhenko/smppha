@@ -316,6 +316,9 @@ class bind_cmd : public pdu<system_id,
                             address_range> {
 };
 
+class bind_cmd_resp : public pdu<system_id> {
+};
+
 class bind_transmitter
     : public bind_cmd, public std::enable_shared_from_this<bind_transmitter> {
  public:
@@ -333,7 +336,7 @@ class bind_transmitter
 };
 
 class bind_transmitter_resp
-    : public pdu<system_id>, public std::enable_shared_from_this<bind_transmitter_resp> {
+    : public bind_cmd_resp, public std::enable_shared_from_this<bind_transmitter_resp> {
  public:
   command_id cmd_id() const override {
     return command_id::bind_transmitter_resp;
@@ -363,7 +366,7 @@ class bind_receiver
 };
 
 class bind_receiver_resp
-    : public pdu<system_id>, public std::enable_shared_from_this<bind_receiver_resp> {
+    : public bind_cmd_resp, public std::enable_shared_from_this<bind_receiver_resp> {
  public:
   command_id cmd_id() const override {
     return command_id::bind_receiver_resp;
@@ -395,7 +398,7 @@ class bind_transceiver
 };
 
 class bind_transceiver_resp
-    : public pdu<system_id>, public std::enable_shared_from_this<bind_transceiver_resp> {
+    : public bind_cmd_resp, public std::enable_shared_from_this<bind_transceiver_resp> {
  public:
   command_id cmd_id() const override {
     return command_id::bind_transceiver_resp;
