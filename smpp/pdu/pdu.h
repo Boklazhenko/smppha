@@ -150,7 +150,7 @@ class pdu : public i_pdu {
       if (!r.good())
         return errc::make_error_code(errc::protocol_error);
 
-      std::shared_ptr<i_optional_param> p_opt_param = create_opt_param_by_tag(static_cast<opt_par_tag>(tag));
+      std::shared_ptr<i_optional_param> p_opt_param = opt_par_factory::instance().create(tag);
 
       if (!p_opt_param)
         return errc::make_error_code(errc::protocol_error);

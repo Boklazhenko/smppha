@@ -12,6 +12,7 @@
 #include "../constants.h"
 #include <memory>
 #include <boost/system/error_code.hpp>
+#include <shared_mutex>
 
 namespace smpp {
 
@@ -240,6 +241,89 @@ inline std::shared_ptr<i_optional_param> create_opt_param_by_tag(opt_par_tag tag
 
   return make_shared<unknown_optional_param>(to_integral(tag));
 }
+
+class opt_par_factory {
+ public:
+  opt_par_factory(const opt_par_factory &) = delete;
+  opt_par_factory(opt_par_factory &&) = delete;
+  opt_par_factory &operator=(const opt_par_factory &) = delete;
+  opt_par_factory &operator=(opt_par_factory &&) = delete;
+
+  static opt_par_factory &instance() {
+    static opt_par_factory factory;
+    return factory;
+  }
+
+  template<typename t>
+  void add() {
+    std::unique_lock lock(_m);
+    _creators[t::tag_] = []() {
+      return std::make_shared<t>();
+    };
+  }
+
+  std::shared_ptr<i_optional_param> create(uint16_t tag) {
+    std::shared_lock lock(_m);
+    if (auto iter = _creators.find(tag); iter != _creators.end()) {
+      return iter->second();
+    } else {
+      return std::make_shared<unknown_optional_param>(tag);
+    }
+  }
+
+ private:
+  opt_par_factory() {
+    add<receipted_message_id>();
+    add<message_state>();
+    add<network_error_code>();
+    add<message_payload>();
+    add<sar_total_segments>();
+    add<sar_msg_ref_num>();
+    add<sar_segment_seqnum>();
+    add<dest_addr_subunit>();
+    add<dest_network_type>();
+    add<dest_bearer_type>();
+    add<dest_telematics_id>();
+    add<source_addr_subunit>();
+    add<source_network_type>();
+    add<source_bearer_type>();
+    add<source_telematics_id>();
+    add<qos_time_to_live>();
+    add<payload_type>();
+    add<additional_status_info_text>();
+    add<ms_msg_wait_facilities>();
+    add<privacy_indicator>();
+    add<source_subaddress>();
+    add<dest_subaddress>();
+    add<user_message_reference>();
+    add<user_response_code>();
+    add<source_port>();
+    add<destination_port>();
+    add<language_indicator>();
+    add<sc_interface_version>();
+    add<callback_num_pres_ind>();
+    add<callback_num_atag>();
+    add<number_of_messages>();
+    add<callback_num>();
+    add<dpf_result>();
+    add<set_dpf>();
+    add<ms_availability_status>();
+    add<delivery_failure_reason>();
+    add<more_messages_to_send>();
+    add<ussd_service_op>();
+    add<display_time>();
+    add<sms_signal>();
+    add<ms_validity>();
+    add<alert_on_message_delivery>();
+    add<its_reply_type>();
+    add<its_session_info>();
+  }
+  ~opt_par_factory() = default;
+
+ private:
+  std::map<uint16_t, std::function<std::shared_ptr<i_optional_param>()>> _creators;
+  std::shared_mutex _m;
+};
 
 }
 
