@@ -190,58 +190,6 @@ struct ussd_service_op : optional_param_helper<opt_par_tag::ussd_service_op, uin
 
 struct its_session_info : optional_param_helper<opt_par_tag::its_session_info, uint16_t> {};
 
-inline std::shared_ptr<i_optional_param> create_opt_param_by_tag(opt_par_tag tag) {
-  using namespace std;
-  switch (tag) {
-    case opt_par_tag::receipted_message_id:return make_shared<receipted_message_id>();
-    case opt_par_tag::message_state:return make_shared<message_state>();
-    case opt_par_tag::network_error_code:return make_shared<network_error_code>();
-    case opt_par_tag::message_payload:return make_shared<message_payload>();
-    case opt_par_tag::sar_total_segments:return make_shared<sar_total_segments>();
-    case opt_par_tag::sar_msg_ref_num:return make_shared<sar_msg_ref_num>();
-    case opt_par_tag::sar_segment_seqnum:return make_shared<sar_segment_seqnum>();
-    case opt_par_tag::dest_addr_subunit:return make_shared<dest_addr_subunit>();
-    case opt_par_tag::dest_network_type:return make_shared<dest_network_type>();
-    case opt_par_tag::dest_bearer_type:return make_shared<dest_bearer_type>();
-    case opt_par_tag::dest_telematics_id:return make_shared<dest_telematics_id>();
-    case opt_par_tag::source_addr_subunit:return make_shared<source_addr_subunit>();
-    case opt_par_tag::source_network_type:return make_shared<source_network_type>();
-    case opt_par_tag::source_bearer_type:return make_shared<source_bearer_type>();
-    case opt_par_tag::source_telematics_id:return make_shared<source_telematics_id>();
-    case opt_par_tag::qos_time_to_live:return make_shared<qos_time_to_live>();
-    case opt_par_tag::payload_type:return make_shared<payload_type>();
-    case opt_par_tag::additional_status_info_text:return make_shared<additional_status_info_text>();
-    case opt_par_tag::ms_msg_wait_facilities:return make_shared<ms_msg_wait_facilities>();
-    case opt_par_tag::privacy_indicator:return make_shared<privacy_indicator>();
-    case opt_par_tag::source_subaddress:return make_shared<source_subaddress>();
-    case opt_par_tag::dest_subaddress:return make_shared<dest_subaddress>();
-    case opt_par_tag::user_message_reference:return make_shared<user_message_reference>();
-    case opt_par_tag::user_response_code:return make_shared<user_response_code>();
-    case opt_par_tag::source_port:return make_shared<source_port>();
-    case opt_par_tag::destination_port:return make_shared<destination_port>();
-    case opt_par_tag::language_indicator:return make_shared<language_indicator>();
-    case opt_par_tag::sc_interface_version:return make_shared<sc_interface_version>();
-    case opt_par_tag::callback_num_pres_ind:return make_shared<callback_num_pres_ind>();
-    case opt_par_tag::callback_num_atag:return make_shared<callback_num_atag>();
-    case opt_par_tag::number_of_messages:return make_shared<number_of_messages>();
-    case opt_par_tag::callback_num:return make_shared<callback_num>();
-    case opt_par_tag::dpf_result:return make_shared<dpf_result>();
-    case opt_par_tag::set_dpf:return make_shared<set_dpf>();
-    case opt_par_tag::ms_availability_status:return make_shared<ms_availability_status>();
-    case opt_par_tag::delivery_failure_reason:return make_shared<delivery_failure_reason>();
-    case opt_par_tag::more_messages_to_send:return make_shared<more_messages_to_send>();
-    case opt_par_tag::ussd_service_op:return make_shared<ussd_service_op>();
-    case opt_par_tag::display_time:return make_shared<display_time>();
-    case opt_par_tag::sms_signal:return make_shared<sms_signal>();
-    case opt_par_tag::ms_validity:return make_shared<ms_validity>();
-    case opt_par_tag::alert_on_message_delivery:return make_shared<alert_on_message_delivery>();
-    case opt_par_tag::its_reply_type:return make_shared<its_reply_type>();
-    case opt_par_tag::its_session_info:return make_shared<its_session_info>();
-  }
-
-  return make_shared<unknown_optional_param>(to_integral(tag));
-}
-
 class opt_par_factory {
  public:
   opt_par_factory(const opt_par_factory &) = delete;
