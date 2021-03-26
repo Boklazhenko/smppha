@@ -15,10 +15,7 @@ smpp::socket::socket(boost::asio::io_context &ioc)
 }
 
 void smpp::socket::write_async(const std::shared_ptr<i_pdu> &p_pdu, const write_handler &handler) {
-  {
-    std::lock_guard guard(_cmds_m);
-    _write_cmds.push(write_cmd{p_pdu, handler});
-  }
+  _write_cmds.enqueue(write_cmd{p_pdu, handler});
 
   write_next_async();
 }
@@ -89,16 +86,11 @@ void smpp::socket::write_next_async() {
   if (_writing.exchange(true))
     return;
 
-  std::unique_lock lock(_cmds_m);
-  if (_write_cmds.empty()) {
+  write_cmd cmd;
+  if(!_write_cmds.try_dequeue(cmd)) {
     _writing = false;
     return;
   }
-
-  write_cmd cmd = _write_cmds.front();
-  _write_cmds.pop();
-
-  lock.unlock();
 
   _write_buff = cmd.p_pdu->serialize();
 
@@ -113,14 +105,11 @@ void smpp::socket::write_next_async() {
 }
 
 void smpp::socket::close() {
-  {
-    std::lock_guard guard(_cmds_m);
-    while (!_write_cmds.empty()) {
-      _ioc.post([handler = _write_cmds.front().handler]() {
-        handler(boost::system::errc::make_error_code(boost::system::errc::operation_canceled));
-      });
-      _write_cmds.pop();
-    }
+  write_cmd cmd;
+  while (_write_cmds.try_dequeue(cmd)) {
+    _ioc.post([handler = cmd.handler]() {
+      handler(boost::system::errc::make_error_code(boost::system::errc::operation_canceled));
+    });
   }
 
   {

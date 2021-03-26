@@ -11,14 +11,13 @@
 #include <memory>
 #include <queue>
 #include "boost/system/error_code.hpp"
+#include "concurrentqueue.h"
 
 namespace smpp {
 
 class i_pdu;
 
 class socket : public std::enable_shared_from_this<socket> {
-  struct write_cmd;
-
  public:
   using open_handler = std::function<void(boost::system::error_code)>;
   using write_handler = std::function<void(boost::system::error_code)>;
@@ -55,13 +54,12 @@ class socket : public std::enable_shared_from_this<socket> {
   std::vector<uint8_t> _read_length_buff;
   std::vector<uint8_t> _read_buff;
 
-  std::queue<write_cmd> _write_cmds;
-  std::mutex _cmds_m;
-
   struct write_cmd {
     std::shared_ptr<smpp::i_pdu> p_pdu;
     write_handler handler;
   };
+
+  moodycamel::ConcurrentQueue<write_cmd> _write_cmds;
 };
 
 }
