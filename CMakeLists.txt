@@ -14,4 +14,7 @@ add_library(smppha smpp/constants.h
         smpp/pdu/optional_params.h
         smpp/pdu/pdu.h
         smpp/pdu/pdu_visitor.h
-        smpp/socket/socket.h smpp/socket/socket.cpp smpp/pdu/segmented_info.h smpp/pdu/segmented_info.cpp smpp/pdu/delivery_receipt_info.cpp smpp/pdu/delivery_receipt_info.h)
+        smpp/socket/socket.h smpp/socket/socket.cpp
+        smpp/pdu/segmented_info.h smpp/pdu/segmented_info.cpp
+        smpp/pdu/delivery_receipt_info.cpp smpp/pdu/delivery_receipt_info.h
+        smpp/text/encoding.h smpp/text/encoding.cpp)
