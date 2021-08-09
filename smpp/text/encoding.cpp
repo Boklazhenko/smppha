@@ -46,10 +46,34 @@ std::string smpp::utf_8::to_string() const {
   return "UTF-8";
 }
 
+uint8_t smpp::utf_8::to_uint8() const {
+  return 0x00;
+}
+
+smpp::utf_8::operator uint8_t() const {
+  return this->to_uint8();
+}
+
 std::string smpp::ucs::to_string() const {
   return "UCS-2BE";
 }
 
+uint8_t smpp::ucs::to_uint8() const {
+  return 0x08;
+}
+
+smpp::ucs::operator uint8_t() const {
+  return this->to_uint8();
+}
+
 std::string smpp::latin1::to_string() const {
   return "ISO8859-1";
+}
+
+uint8_t smpp::latin1::to_uint8() const {
+  return 0x03;
+}
+
+smpp::latin1::operator uint8_t() const {
+  return this->to_uint8();
 }

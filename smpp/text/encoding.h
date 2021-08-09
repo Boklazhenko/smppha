@@ -12,7 +12,7 @@ namespace smpp {
 
 class convert_exception : public std::exception {
  public:
-  explicit convert_exception(const std::string& message);
+  explicit convert_exception(const std::string &message);
 
   const char *what() const _GLIBCXX_TXN_SAFE_DYN _GLIBCXX_NOTHROW override;
 
@@ -25,21 +25,29 @@ class encoding {
   virtual ~encoding() = default;
 
   virtual std::string to_string() const = 0;
+  virtual uint8_t to_uint8() const = 0;
+  virtual operator uint8_t() const = 0;
 };
 
 class utf_8 : public encoding {
  public:
   std::string to_string() const override;
+  virtual uint8_t to_uint8() const override;
+  virtual operator uint8_t() const override;
 };
 
 class ucs : public encoding {
  public:
   std::string to_string() const override;
+  virtual uint8_t to_uint8() const override;
+  virtual operator uint8_t() const override;
 };
 
 class latin1 : public encoding {
  public:
   std::string to_string() const override;
+  uint8_t to_uint8() const override;
+  virtual operator uint8_t() const override;
 };
 
 std::vector<uint8_t> convert(const std::vector<uint8_t> &src, const encoding &from, const encoding &to);
